@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const isAuthenticated = localStorage.getItem('token');
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -17,7 +18,8 @@ function Navbar() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
+    setIsMobileMenuOpen(false);
     window.location.href = '/';
   };
 
@@ -49,6 +51,13 @@ function Navbar() {
                 Events
               </Link>
             </li>
+            {isAuthenticated && isAdmin && (
+              <li>
+                <Link to="/admin" className={isActive('/admin')} onClick={() => setIsMobileMenuOpen(false)}>
+                  Dashboard
+                </Link>
+              </li>
+            )}
             {!isAuthenticated ? (
               <>
                 <li>
@@ -58,11 +67,27 @@ function Navbar() {
                 </li>
               </>
             ) : (
-              <li>
-                <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
-                  Logout
-                </a>
-              </li>
+              <>
+                <li className="dropdown">
+                  <a href="#" className="dropdown-toggle" data-bs-toggle="dropdown">
+                    <i className="bi bi-person-circle me-1"></i>
+                    {user?.firstName || 'Account'}
+                  </a>
+                  <ul className="dropdown-menu">
+                    <li>
+                      <Link className="dropdown-item" to="/my-tickets" onClick={() => setIsMobileMenuOpen(false)}>
+                        <i className="bi bi-ticket-perforated me-2"></i>My Tickets
+                      </Link>
+                    </li>
+                    <li><hr className="dropdown-divider" /></li>
+                    <li>
+                      <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
+                        <i className="bi bi-box-arrow-right me-2"></i>Logout
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+              </>
             )}
           </ul>
           <i className={`mobile-nav-toggle d-xl-none bi ${isMobileMenuOpen ? 'bi-x' : 'bi-list'}`} onClick={toggleMobileMenu}></i>

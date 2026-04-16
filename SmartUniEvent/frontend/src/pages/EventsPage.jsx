@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { eventsAPI } from '../services/api';
 
 function EventsPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -22,86 +24,20 @@ function EventsPage() {
 
   const fetchEvents = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('http://localhost:5000/api/events');
-      // const data = await response.json();
-
-      // Mock data for now
-      const mockEvents = [
-        {
-          id: 1,
-          title: 'Spring Gala 2024',
-          description: 'Annual university spring gala with live music, food, and entertainment',
-          date: '2024-04-15',
-          time: '19:00',
-          location: 'Main Campus Hall',
-          availableTickets: 150,
-          totalTickets: 500,
-          price: 25,
-          imageUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30',
-          category: 'gala'
-        },
-        {
-          id: 2,
-          title: 'Tech Conference 2024',
-          description: 'Cutting-edge technology conference featuring industry leaders',
-          date: '2024-04-20',
-          time: '09:00',
-          location: 'Engineering Building',
-          availableTickets: 200,
-          totalTickets: 300,
-          price: 15,
-          imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87',
-          category: 'conference'
-        },
-        {
-          id: 3,
-          title: 'Football Championship',
-          description: 'Inter-university football championship finals',
-          date: '2024-04-22',
-          time: '15:00',
-          location: 'University Stadium',
-          availableTickets: 500,
-          totalTickets: 1000,
-          price: 10,
-          imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
-          category: 'sports'
-        },
-        {
-          id: 4,
-          title: 'Music Festival',
-          description: 'Two-day music festival featuring student bands and special guests',
-          date: '2024-05-01',
-          time: '17:00',
-          location: 'Campus Green',
-          availableTickets: 800,
-          totalTickets: 1000,
-          price: 20,
-          imageUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea',
-          category: 'festival'
-        },
-        {
-          id: 5,
-          title: 'Career Fair 2024',
-          description: 'Meet top employers and explore career opportunities',
-          date: '2024-04-25',
-          time: '10:00',
-          location: 'Student Center',
-          availableTickets: 300,
-          totalTickets: 500,
-          price: 0,
-          imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865',
-          category: 'career'
-        }
-      ];
-
-      setEvents(mockEvents);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching events:', error);
+      setLoading(true);
+      const response = await eventsAPI.getAll();
+      setEvents(response.data.events || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching events:', err);
+      setError('Failed to load events. Please try again later.');
+      // Fallback to empty array
+      setEvents([]);
+    } finally {
       setLoading(false);
     }
   };
+
 
   const filteredEvents = filter === 'all'
     ? events
@@ -147,16 +83,16 @@ function EventsPage() {
               All Events
             </button>
             <button
-              className={`btn ${filter === 'gala' ? 'btn-warning' : 'btn-outline-warning'}`}
-              onClick={() => setFilter('gala')}
+              className={`btn ${filter === 'academic' ? 'btn-warning' : 'btn-outline-warning'}`}
+              onClick={() => setFilter('academic')}
             >
-              Galas
+              Academic
             </button>
             <button
-              className={`btn ${filter === 'conference' ? 'btn-warning' : 'btn-outline-warning'}`}
-              onClick={() => setFilter('conference')}
+              className={`btn ${filter === 'social' ? 'btn-warning' : 'btn-outline-warning'}`}
+              onClick={() => setFilter('social')}
             >
-              Conferences
+              Social
             </button>
             <button
               className={`btn ${filter === 'sports' ? 'btn-warning' : 'btn-outline-warning'}`}
@@ -164,15 +100,8 @@ function EventsPage() {
             >
               Sports
             </button>
-            <button
-              className={`btn ${filter === 'festival' ? 'btn-warning' : 'btn-outline-warning'}`}
-              onClick={() => setFilter('festival')}
-            >
-              Festivals
-            </button>
           </div>
         </div>
-
         <div className="container">
           <div className="row gy-4">
             {filteredEvents.map((event, index) => (

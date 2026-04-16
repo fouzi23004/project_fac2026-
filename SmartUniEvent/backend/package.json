@@ -1,0 +1,33 @@
+{
+  "name": "smartunievent-backend",
+  "version": "1.0.0",
+  "description": "SmartUniEvent Backend API - University Event Ticketing System",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:init": "psql -U postgres -f src/config/schema.sql",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["ticketing", "university", "events", "api"],
+  "author": "Hedi EL FOUZI, Yassin ABID, Melek BRADAI",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.20.0",
+    "qrcode": "^1.5.4",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

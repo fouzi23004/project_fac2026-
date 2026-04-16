@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
   const [formData, setFormData] = useState({
@@ -7,9 +8,16 @@ function LoginPage() {
     password: ''
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login, loginWithOAuth, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      navigate('/events');
+    }
+
     // Initialize AOS animations
     if (window.AOS) {
       window.AOS.init({
@@ -19,7 +27,7 @@ function LoginPage() {
         mirror: false
       });
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const handleChange = (e) => {
     setFormData({
@@ -31,35 +39,28 @@ function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     // Validate academic email
     if (!formData.email.endsWith('.edu') && !formData.email.endsWith('.tn')) {
       setError('Please use your academic email address');
+      setLoading(false);
       return;
     }
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.token);
-        navigate('/events');
-      } else {
-        const error = await response.json();
-        setError(error.message || 'Login failed');
-      }
+      await login(formData.email, formData.password);
+      navigate('/events');
     } catch (err) {
-      setError('Connection error. Please try again.');
+      setError(err.message || 'Login failed. Please check your credentials.');
       console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleOAuthLogin = (provider) => {
+    loginWithOAuth(provider);
   };
 
   return (
@@ -125,10 +126,44 @@ function LoginPage() {
                       />
                     </div>
 
-                    <button type="submit" className="btn btn-warning w-100 btn-lg mb-3">
-                      <i className="bi bi-box-arrow-in-right me-2"></i>Login
+                    <button type="submit" className="btn btn-warning w-100 btn-lg mb-3" disabled={loading}>
+                      {loading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Logging in...
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-box-arrow-in-right me-2"></i>Login
+                        </>
+                      )}
                     </button>
                   </form>
+
+                  <div className="text-center my-3">
+                    <span className="text-light">or continue with</span>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-6">
+                      <button
+                        onClick={() => handleOAuthLogin('google')}
+                        className="btn btn-outline-light w-100"
+                        disabled={loading}
+                      >
+                        <i className="bi bi-google me-2"></i>Google
+                      </button>
+                    </div>
+                    <div className="col-6">
+                      <button
+                        onClick={() => handleOAuthLogin('microsoft')}
+                        className="btn btn-outline-light w-100"
+                        disabled={loading}
+                      >
+                        <i className="bi bi-microsoft me-2"></i>Microsoft
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="text-center">
                     <p className="text-light mb-0">

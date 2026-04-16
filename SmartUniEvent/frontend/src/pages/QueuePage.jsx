@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { eventsAPI, queueAPI, ticketsAPI } from '../services/api';
 
 function QueuePage() {
   const { eventId } = useParams();
@@ -9,6 +10,8 @@ function QueuePage() {
   const [totalInQueue, setTotalInQueue] = useState(null);
   const [estimatedWaitTime, setEstimatedWaitTime] = useState(null);
   const [eventInfo, setEventInfo] = useState(null);
+  const [error, setError] = useState(null);
+  const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -24,85 +27,95 @@ function QueuePage() {
 
   const fetchEventInfo = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`http://localhost:5000/api/events/${eventId}`);
-      // const data = await response.json();
-
-      // Mock data
-      const mockEvent = {
-        id: eventId,
-        title: 'Spring Gala 2024',
-        date: '2024-04-15',
-        time: '19:00',
-        location: 'Main Campus Hall',
-        price: 25,
-        availableTickets: 150
-      };
-
-      setEventInfo(mockEvent);
+      const response = await eventsAPI.getById(eventId);
+      const event = response.data.event;
+      setEventInfo({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        price: event.price,
+        availableTickets: event.availableTickets,
+        totalTickets: event.totalTickets
+      });
     } catch (error) {
       console.error('Error fetching event info:', error);
+      setError('Failed to load event information');
     }
   };
 
   const joinQueue = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`http://localhost:5000/api/queue/join/${eventId}`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   }
-      // });
-      // const data = await response.json();
+      const response = await queueAPI.join(eventId);
+      setQueueStatus('waiting');
+      setPosition(response.data.position || 1);
+      setTotalInQueue(response.data.totalInQueue || 1);
+      setEstimatedWaitTime(response.data.estimatedWaitTime || 2);
 
-      // Simulate joining queue
-      setTimeout(() => {
-        setQueueStatus('waiting');
-        setPosition(Math.floor(Math.random() * 100) + 1);
-        setTotalInQueue(Math.floor(Math.random() * 200) + 100);
-        setEstimatedWaitTime(Math.floor(Math.random() * 10) + 2);
-
-        // Simulate queue updates
-        simulateQueueProgress();
-      }, 2000);
+      // Start polling queue status
+      startQueuePolling();
     } catch (error) {
       console.error('Error joining queue:', error);
+      setError(error.response?.data?.message || 'Failed to join queue');
+      // If queue system isn't working, go straight to purchasing
+      setTimeout(() => {
+        setQueueStatus('purchasing');
+      }, 1000);
     }
   };
 
-  const simulateQueueProgress = () => {
-    const interval = setInterval(() => {
-      setPosition(prev => {
-        if (prev <= 1) {
+  const startQueuePolling = () => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await queueAPI.getStatus(eventId);
+        setPosition(response.data.position);
+        setTotalInQueue(response.data.totalInQueue);
+        setEstimatedWaitTime(response.data.estimatedWaitTime);
+
+        if (response.data.position === 0 || response.data.canPurchase) {
           clearInterval(interval);
           setQueueStatus('purchasing');
-          return 0;
         }
-        return prev - 1;
-      });
-      setEstimatedWaitTime(prev => Math.max(0, prev - 0.5));
+      } catch (error) {
+        console.error('Error polling queue:', error);
+        // If polling fails, simulate progress as fallback
+        setPosition(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setQueueStatus('purchasing');
+            return 0;
+          }
+          return prev - 1;
+        });
+        setEstimatedWaitTime(prev => Math.max(0, prev - 0.5));
+      }
     }, 3000);
+
+    // Store interval ID for cleanup
+    return interval;
   };
 
   const handlePurchase = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`http://localhost:5000/api/tickets/purchase/${eventId}`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   }
-      // });
-      // const data = await response.json();
+      setPurchasing(true);
+      setError(null);
 
-      // Simulate purchase
+      const response = await ticketsAPI.purchase(eventId, {
+        // Payment data can be added here if needed
+        paymentMethod: 'free' // or actual payment method
+      });
+
       setQueueStatus('completed');
+
       setTimeout(() => {
-        navigate('/ticket/123'); // Replace with actual ticket ID
+        navigate(`/tickets/${response.data.ticket.id}`);
       }, 2000);
     } catch (error) {
       console.error('Error purchasing ticket:', error);
+      setError(error.response?.data?.message || 'Failed to purchase ticket');
+      setPurchasing(false);
     }
   };
 
@@ -186,6 +199,13 @@ function QueuePage() {
                       <h3 className="text-warning mb-3">It's Your Turn!</h3>
                       <p className="text-light mb-4">You can now purchase your ticket</p>
 
+                      {error && (
+                        <div className="alert alert-danger mb-4">
+                          <i className="bi bi-exclamation-triangle me-2"></i>
+                          {error}
+                        </div>
+                      )}
+
                       {eventInfo && (
                         <div className="mb-4">
                           <div className="list-group">
@@ -207,14 +227,27 @@ function QueuePage() {
                             </div>
                             <div className="list-group-item d-flex justify-content-between align-items-center" style={{backgroundColor: '#2a2a2a', border: '1px solid #3a3a3a'}}>
                               <span className="text-warning fw-bold fs-5">Total</span>
-                              <span className="text-warning fw-bold fs-5">${eventInfo.price}</span>
+                              <span className="text-warning fw-bold fs-5">${eventInfo.price === 0 ? 'FREE' : eventInfo.price}</span>
                             </div>
                           </div>
                         </div>
                       )}
 
-                      <button onClick={handlePurchase} className="btn btn-warning btn-lg w-100 mb-3">
-                        <i className="bi bi-credit-card me-2"></i>Confirm Purchase
+                      <button
+                        onClick={handlePurchase}
+                        className="btn btn-warning btn-lg w-100 mb-3"
+                        disabled={purchasing}
+                      >
+                        {purchasing ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <i className="bi bi-credit-card me-2"></i>Confirm Purchase
+                          </>
+                        )}
                       </button>
                       <div className="alert alert-warning" role="alert">
                         <i className="bi bi-exclamation-triangle me-2"></i>Complete your purchase within 5 minutes

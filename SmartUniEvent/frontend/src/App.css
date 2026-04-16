@@ -15,3 +15,49 @@ body {
 .App {
   min-height: 100vh;
 }
+
+/* Hover effects for cards */
+.hover-shadow {
+  transition: all 0.3s ease;
+}
+
+.hover-shadow:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Ticket card styles */
+.ticket-card {
+  border: none;
+  overflow: hidden;
+}
+
+.ticket-card .card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.qr-code-container {
+  display: inline-block;
+  max-width: 100%;
+}
+
+/* Print styles for ticket */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .ticket-card,
+  .ticket-card * {
+    visibility: visible;
+  }
+  .ticket-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  button,
+  .btn {
+    display: none !important;
+  }
+}

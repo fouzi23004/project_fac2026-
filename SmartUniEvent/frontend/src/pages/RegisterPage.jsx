@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -11,9 +12,16 @@ function RegisterPage() {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { register, loginWithOAuth, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      navigate('/events');
+    }
+
     // Initialize AOS animations
     if (window.AOS) {
       window.AOS.init({
@@ -23,7 +31,7 @@ function RegisterPage() {
         mirror: false
       });
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const handleChange = (e) => {
     setFormData({
@@ -35,53 +43,48 @@ function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     // Validate academic email
     if (!formData.email.endsWith('.edu') && !formData.email.endsWith('.tn')) {
       setError('Please use your academic email address');
+      setLoading(false);
       return;
     }
 
     // Validate password match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      setLoading(false);
       return;
     }
 
     // Validate password strength
     if (formData.password.length < 8) {
       setError('Password must be at least 8 characters long');
+      setLoading(false);
       return;
     }
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          studentId: formData.studentId,
-          password: formData.password
-        }),
+      await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        studentId: formData.studentId,
+        password: formData.password
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.token);
-        navigate('/events');
-      } else {
-        const error = await response.json();
-        setError(error.message || 'Registration failed');
-      }
+      navigate('/events');
     } catch (err) {
-      setError('Connection error. Please try again.');
+      setError(err.message || 'Registration failed. Please try again.');
       console.error('Registration error:', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleOAuthRegister = (provider) => {
+    loginWithOAuth(provider);
   };
 
   return (
@@ -233,10 +236,44 @@ function RegisterPage() {
                       />
                     </div>
 
-                    <button type="submit" className="btn btn-warning w-100 btn-lg mb-3">
-                      <i className="bi bi-person-plus me-2"></i>Register
+                    <button type="submit" className="btn btn-warning w-100 btn-lg mb-3" disabled={loading}>
+                      {loading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Creating account...
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-person-plus me-2"></i>Register
+                        </>
+                      )}
                     </button>
                   </form>
+
+                  <div className="text-center my-3">
+                    <span className="text-light">or sign up with</span>
+                  </div>
+
+                  <div className="row g-2 mb-3">
+                    <div className="col-6">
+                      <button
+                        onClick={() => handleOAuthRegister('google')}
+                        className="btn btn-outline-light w-100"
+                        disabled={loading}
+                      >
+                        <i className="bi bi-google me-2"></i>Google
+                      </button>
+                    </div>
+                    <div className="col-6">
+                      <button
+                        onClick={() => handleOAuthRegister('microsoft')}
+                        className="btn btn-outline-light w-100"
+                        disabled={loading}
+                      >
+                        <i className="bi bi-microsoft me-2"></i>Microsoft
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="text-center">
                     <p className="text-light mb-0">
