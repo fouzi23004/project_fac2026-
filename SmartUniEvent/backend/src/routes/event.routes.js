@@ -14,6 +14,6 @@ router.get('/', getAllEvents);
 router.get('/:id', getEvent);
 router.post('/', protect, authorize('admin', 'superadmin'), validateEvent, createEvent);
 router.put('/:id', protect, authorize('admin', 'superadmin'), updateEvent);
-router.delete('/:id', protect, authorize('superadmin'), deleteEvent);
+router.delete('/:id', protect, authorize('admin', 'superadmin'), deleteEvent);
 
 module.exports = router;

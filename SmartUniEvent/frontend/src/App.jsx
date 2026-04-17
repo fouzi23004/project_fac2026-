@@ -12,6 +12,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import TicketScanner from './pages/TicketScanner';
 import ManageEventsPage from './pages/ManageEventsPage';
 import CreateEventPage from './pages/CreateEventPage';
+import EditEventPage from './pages/EditEventPage';
 import ManageUsersPage from './pages/ManageUsersPage';
 import ScanTicketPage from './pages/ScanTicketPage';
 import Navbar from './components/Navbar';
@@ -89,6 +90,14 @@ function App() {
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <CreateEventPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/edit-event/:id"
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <EditEventPage />
                 </ProtectedRoute>
               }
             />

@@ -73,15 +73,15 @@ function ManageEventsPage() {
   }
 
   return (
-    <div className="container my-5">
+    <div className="container my-5" style={{minHeight: '100vh', backgroundColor: 'var(--background-color)'}}>
       {/* Header */}
-      <div className="row mb-4">
+      <div className="row mb-4 align-items-center">
         <div className="col-md-6">
           <h1 className="display-5 mb-2 text-warning">Manage Events</h1>
           <p className="text-light">Create, edit, and delete university events</p>
         </div>
         <div className="col-md-6 text-md-end">
-          <Link to="/admin/create-event" className="btn btn-warning btn-lg">
+          <Link to="/admin/create-event" className="btn btn-warning">
             <i className="bi bi-plus-circle me-2"></i>
             Create New Event
           </Link>
@@ -107,9 +107,10 @@ function ManageEventsPage() {
             <div className="col-md-4">
               <label className="form-label text-light">Category</label>
               <select
-                className="form-select"
+                className="form-select bg-dark text-light border-secondary"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
+                style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
               >
                 <option value="all">All Categories</option>
                 <option value="academic">Academic</option>
@@ -121,10 +122,11 @@ function ManageEventsPage() {
               <label className="form-label text-light">Search</label>
               <input
                 type="text"
-                className="form-control"
+                className="form-control bg-dark text-light border-secondary"
                 placeholder="Search events by title or description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
               />
             </div>
           </div>
@@ -180,31 +182,31 @@ function ManageEventsPage() {
         <div className="card-body p-0">
           {filteredEvents.length === 0 ? (
             <div className="text-center py-5">
-              <i className="bi bi-calendar-x display-1 text-muted"></i>
-              <p className="mt-3 text-muted">No events found</p>
+              <i className="bi bi-calendar-x display-1 text-warning" style={{opacity: 0.5}}></i>
+              <p className="mt-3 text-light">No events found</p>
             </div>
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover mb-0">
-                <thead className="table-light">
+              <table className="table table-hover mb-0 table-dark">
+                <thead style={{backgroundColor: '#2a2a2a', borderBottom: '2px solid var(--accent-color)'}}>
                   <tr>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Date & Time</th>
-                    <th>Location</th>
-                    <th>Price</th>
-                    <th>Tickets</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th className="text-warning">Title</th>
+                    <th className="text-warning">Category</th>
+                    <th className="text-warning">Date & Time</th>
+                    <th className="text-warning">Location</th>
+                    <th className="text-warning">Price</th>
+                    <th className="text-warning">Tickets</th>
+                    <th className="text-warning">Status</th>
+                    <th className="text-warning">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="text-light">
                   {filteredEvents.map((event) => (
                     <tr key={event.id}>
                       <td>
-                        <strong>{event.title}</strong>
+                        <strong className="text-light">{event.title}</strong>
                         <br />
-                        <small className="text-muted">
+                        <small className="text-light" style={{opacity: 0.7}}>
                           {event.description.substring(0, 60)}...
                         </small>
                       </td>
@@ -218,23 +220,23 @@ function ManageEventsPage() {
                         </span>
                       </td>
                       <td>
-                        <small>
+                        <small className="text-light">
                           {new Date(event.date).toLocaleDateString()}
                           <br />
                           {event.time}
                         </small>
                       </td>
                       <td>
-                        <small>{event.location}</small>
+                        <small className="text-light">{event.location}</small>
                       </td>
                       <td>
-                        <strong>${parseFloat(event.price).toFixed(2)}</strong>
+                        <strong className="text-warning">${parseFloat(event.price).toFixed(2)}</strong>
                       </td>
                       <td>
-                        <small>
+                        <small className="text-light">
                           {event.availableTickets} / {event.totalTickets}
                           <br />
-                          <span className="text-muted">
+                          <span className="text-light" style={{opacity: 0.7}}>
                             ({Math.round((event.availableTickets / event.totalTickets) * 100)}% left)
                           </span>
                         </small>

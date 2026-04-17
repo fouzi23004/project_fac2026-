@@ -18,18 +18,19 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is logged in on mount
     const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      // TODO: Validate token and fetch user data
-      setToken(storedToken);
-      // Mock user data - replace with actual API call
-      setUser({
-        id: '1',
-        email: 'student@university.edu',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'student', // student, admin, or superadmin
-        isVerified: true
-      });
+    const storedUser = localStorage.getItem('user');
+
+    if (storedToken && storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setToken(storedToken);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        // Clear invalid data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
@@ -54,6 +55,7 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       return data;
     } catch (error) {
       throw error;
@@ -85,6 +87,7 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       return data;
     } catch (error) {
       console.error('Registration error in catch:', error);
@@ -101,6 +104,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   const value = {

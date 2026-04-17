@@ -40,14 +40,14 @@ echo.
 
 echo [3/4] Starting Backend Server...
 echo       Opening backend in new terminal...
-start "SmartUniEvent Backend" cmd /k "cd backend && npm run dev"
+start "SmartUniEvent Backend" cmd /k "cd /d %~dp0backend && npm run dev"
 echo       Backend starting on http://localhost:5000
 echo.
 
 echo [4/4] Starting Frontend Server...
 echo       Opening frontend in new terminal...
 timeout /t 2 /nobreak >nul
-start "SmartUniEvent Frontend" cmd /k "cd frontend && npm run dev"
+start "SmartUniEvent Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 echo       Frontend starting on http://localhost:5173
 echo.
 

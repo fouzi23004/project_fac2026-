@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { eventsAPI } from '../services/api';
 
-function CreateEventPage() {
+function EditEventPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -17,6 +19,52 @@ function CreateEventPage() {
     totalTickets: '',
     imageUrl: ''
   });
+  const [eventInfo, setEventInfo] = useState({
+    totalTickets: 0,
+    availableTickets: 0,
+    soldTickets: 0
+  });
+
+  useEffect(() => {
+    fetchEvent();
+  }, [id]);
+
+  const fetchEvent = async () => {
+    try {
+      setFetchLoading(true);
+      const response = await eventsAPI.getById(id);
+      const event = response.data.event;
+
+      // Format date to YYYY-MM-DD for input
+      const eventDate = new Date(event.date);
+      const formattedDate = eventDate.toISOString().split('T')[0];
+
+      const soldTickets = event.totalTickets - event.availableTickets;
+
+      setFormData({
+        title: event.title || '',
+        description: event.description || '',
+        category: event.category || 'academic',
+        date: formattedDate || '',
+        time: event.time || '',
+        location: event.location || '',
+        price: event.price ? parseFloat(event.price).toFixed(2) : '0.00',
+        totalTickets: event.totalTickets || '',
+        imageUrl: event.imageUrl || ''
+      });
+
+      setEventInfo({
+        totalTickets: event.totalTickets || 0,
+        availableTickets: event.availableTickets || 0,
+        soldTickets: soldTickets
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load event');
+      console.error('Error fetching event:', err);
+    } finally {
+      setFetchLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,22 +80,41 @@ function CreateEventPage() {
     setLoading(true);
 
     try {
+      // Don't include totalTickets in update (backend doesn't allow it)
       const eventData = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        date: formData.date,
+        time: formData.time,
+        location: formData.location,
         price: parseFloat(formData.price),
-        totalTickets: parseInt(formData.totalTickets)
+        imageUrl: formData.imageUrl
       };
 
-      await eventsAPI.create(eventData);
-      alert('Event created successfully!');
+      await eventsAPI.update(id, eventData);
+      alert('Event updated successfully!');
       navigate('/admin/manage-events');
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Failed to create event');
-      console.error('Error creating event:', err);
+      setError(err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Failed to update event');
+      console.error('Error updating event:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  if (fetchLoading) {
+    return (
+      <div className="container my-5" style={{backgroundColor: 'var(--background-color)', minHeight: '100vh'}}>
+        <div className="text-center py-5">
+          <div className="spinner-border text-warning" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="text-light mt-3">Loading event details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container my-5" style={{backgroundColor: 'var(--background-color)', minHeight: '100vh'}}>
@@ -65,8 +132,8 @@ function CreateEventPage() {
               </button>
             </div>
             <div>
-              <h2 className="mb-2 text-warning">Create New Event</h2>
-              <p className="text-light mb-0">Fill in the details to create a new event</p>
+              <h2 className="mb-2 text-warning">Edit Event</h2>
+              <p className="text-light mb-0">Update the event details</p>
             </div>
           </div>
 
@@ -94,7 +161,7 @@ function CreateEventPage() {
                   </label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="form-control bg-dark text-light border-secondary"
                     id="title"
                     name="title"
                     value={formData.title}
@@ -103,8 +170,9 @@ function CreateEventPage() {
                     minLength={5}
                     maxLength={200}
                     placeholder="e.g., Annual Research Symposium 2026"
+                    style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
                   />
-                  <small className="text-muted">5-200 characters</small>
+                  <small className="text-light" style={{opacity: 0.7}}>5-200 characters</small>
                 </div>
 
                 {/* Description */}
@@ -113,7 +181,7 @@ function CreateEventPage() {
                     Description <span className="text-danger">*</span>
                   </label>
                   <textarea
-                    className="form-control"
+                    className="form-control bg-dark text-light border-secondary"
                     id="description"
                     name="description"
                     value={formData.description}
@@ -123,8 +191,9 @@ function CreateEventPage() {
                     maxLength={1000}
                     rows={4}
                     placeholder="Provide a detailed description of the event..."
+                    style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
                   ></textarea>
-                  <small className="text-muted">
+                  <small className="text-light" style={{opacity: 0.7}}>
                     {formData.description.length}/1000 characters (minimum 20)
                   </small>
                 </div>
@@ -135,12 +204,13 @@ function CreateEventPage() {
                     Category <span className="text-danger">*</span>
                   </label>
                   <select
-                    className="form-select"
+                    className="form-select bg-dark text-light border-secondary"
                     id="category"
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
                     required
+                    style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
                   >
                     <option value="academic">Academic</option>
                     <option value="social">Social</option>
@@ -156,13 +226,14 @@ function CreateEventPage() {
                     </label>
                     <input
                       type="date"
-                      className="form-control"
+                      className="form-control bg-dark text-light border-secondary"
                       id="date"
                       name="date"
                       value={formData.date}
                       onChange={handleChange}
                       required
                       min={new Date().toISOString().split('T')[0]}
+                      style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
                     />
                   </div>
 
@@ -173,12 +244,13 @@ function CreateEventPage() {
                     </label>
                     <input
                       type="time"
-                      className="form-control"
+                      className="form-control bg-dark text-light border-secondary"
                       id="time"
                       name="time"
                       value={formData.time}
                       onChange={handleChange}
                       required
+                      style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
                     />
                   </div>
                 </div>
@@ -190,13 +262,14 @@ function CreateEventPage() {
                   </label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="form-control bg-dark text-light border-secondary"
                     id="location"
                     name="location"
                     value={formData.location}
                     onChange={handleChange}
                     required
                     placeholder="e.g., University Main Hall"
+                    style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
                   />
                 </div>
 
@@ -207,10 +280,10 @@ function CreateEventPage() {
                       Price (USD) <span className="text-danger">*</span>
                     </label>
                     <div className="input-group">
-                      <span className="input-group-text">$</span>
+                      <span className="input-group-text bg-dark text-light border-secondary" style={{backgroundColor: '#1b1a1a', borderColor: '#444'}}>$</span>
                       <input
                         type="number"
-                        className="form-control"
+                        className="form-control bg-dark text-light border-secondary"
                         id="price"
                         name="price"
                         value={formData.price}
@@ -219,43 +292,47 @@ function CreateEventPage() {
                         min="0"
                         step="0.01"
                         placeholder="0.00"
+                        style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
                       />
                     </div>
-                    <small className="text-muted">Set to 0 for free events</small>
+                    <small className="text-light" style={{opacity: 0.7}}>Set to 0 for free events</small>
                   </div>
 
-                  {/* Total Tickets */}
+                  {/* Total Tickets - Read Only */}
                   <div className="col-md-6 mb-3">
                     <label htmlFor="totalTickets" className="form-label text-light">
-                      Total Tickets <span className="text-danger">*</span>
+                      Total Tickets
                     </label>
                     <input
                       type="number"
-                      className="form-control"
+                      className="form-control bg-dark text-light border-secondary"
                       id="totalTickets"
                       name="totalTickets"
                       value={formData.totalTickets}
-                      onChange={handleChange}
-                      required
-                      min="1"
-                      placeholder="e.g., 500"
+                      disabled
+                      style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444', opacity: 0.6}}
                     />
+                    <small className="text-warning">
+                      <i className="bi bi-info-circle me-1"></i>
+                      Sold: {eventInfo.soldTickets} | Available: {eventInfo.availableTickets}
+                    </small>
                   </div>
                 </div>
 
                 {/* Image URL (Optional) */}
                 <div className="mb-4">
                   <label htmlFor="imageUrl" className="form-label text-light">
-                    Image URL <small className="text-muted">(Optional)</small>
+                    Image URL <small className="text-light" style={{opacity: 0.7}}>(Optional)</small>
                   </label>
                   <input
                     type="url"
-                    className="form-control"
+                    className="form-control bg-dark text-light border-secondary"
                     id="imageUrl"
                     name="imageUrl"
                     value={formData.imageUrl}
                     onChange={handleChange}
                     placeholder="https://example.com/event-image.jpg"
+                    style={{backgroundColor: '#1b1a1a', color: '#f8f8f8', borderColor: '#444'}}
                   />
                 </div>
 
@@ -263,24 +340,24 @@ function CreateEventPage() {
                 <div className="d-flex gap-2">
                   <button
                     type="submit"
-                    className="btn btn-warning btn-lg"
+                    className="btn btn-warning"
                     disabled={loading}
                   >
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2"></span>
-                        Creating...
+                        Updating...
                       </>
                     ) : (
                       <>
                         <i className="bi bi-check-circle me-2"></i>
-                        Create Event
+                        Update Event
                       </>
                     )}
                   </button>
                   <button
                     type="button"
-                    className="btn btn-outline-warning btn-lg"
+                    className="btn btn-outline-warning"
                     onClick={() => navigate('/admin/manage-events')}
                     disabled={loading}
                   >
@@ -296,4 +373,4 @@ function CreateEventPage() {
   );
 }
 
-export default CreateEventPage;
+export default EditEventPage;
