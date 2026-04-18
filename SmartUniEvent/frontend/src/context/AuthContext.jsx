@@ -95,9 +95,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginWithOAuth = async (provider) => {
-    // Redirect to OAuth provider
-    window.location.href = `http://localhost:5000/api/auth/${provider}`;
+  const loginWithOAuth = (provider) => {
+    // Redirect to OAuth provider - use direct backend URL (not API service URL)
+    const backendURL = 'http://localhost:5000';
+    window.location.href = `${backendURL}/api/auth/${provider}`;
   };
 
   const logout = () => {

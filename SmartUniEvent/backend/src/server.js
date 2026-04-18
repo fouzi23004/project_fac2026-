@@ -4,6 +4,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const session = require('express-session');
+const passport = require('./config/passport');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -58,6 +60,24 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Cookie Parser
 app.use(cookieParser(process.env.COOKIE_SECRET));
+
+// Session configuration for OAuth
+app.use(
+  session({
+    secret: process.env.COOKIE_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Request Logging (Development)
 if (process.env.NODE_ENV === 'development') {

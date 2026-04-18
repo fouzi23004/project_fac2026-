@@ -15,6 +15,7 @@ import CreateEventPage from './pages/CreateEventPage';
 import EditEventPage from './pages/EditEventPage';
 import ManageUsersPage from './pages/ManageUsersPage';
 import ScanTicketPage from './pages/ScanTicketPage';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -28,6 +29,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
             <Route path="/events" element={<EventsPage />} />
             <Route
               path="/queue/:eventId"
